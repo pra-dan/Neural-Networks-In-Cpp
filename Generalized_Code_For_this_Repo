@@ -2,47 +2,48 @@
 //Added linear activation beside tanh
 #include <iostream>
 #include<vector>
-#include <list>
-#include <cstdlib>
 #include <math.h>
 
 #define PI 3.141592653589793238463
-#define N
 
+#define N
 #define epsilon 0.05
-#define epoch 5000
+#define epoch 10000
 
 using namespace std;
 extern "C" FILE *popen(const char *command, const char *mode);
 
-//double sigmoid(double x) { return 1.0f / (1.0f + exp(-x)); }
-//double dsigmoid(double x) { return x * (1.0f - x); }
-double tanh(double x) { return (exp(x)-exp(-x))/(exp(x)+exp(-x)) ;}
-double dtanh(double x) {return 1.0f - x*x ;}
+///SIGMOID ACTIVATION DEFINITIONS
+double sigmoid(double x) { return 1.0f / (1.0f + exp(-x)); }
+double dsigmoid(double x) { return x * (1.0f - x); }
 
+///LINEAR ACTIVATION DEFINITIONS
 double lin(double x) { return x;}
 double dlin(double x) { return 1.0f;}
 
+///TANH ACTIVATION DEFINITIONS
+double tanh(double x) { return (exp(x)-exp(-x))/(exp(x)+exp(-x)) ;}
+double dtanh(double x) {return 1.0f - x*x ;}
+
+///WEIGHT INITIALIZER
 double init_weight() { return (2.*rand()/RAND_MAX -1); }
+
 double MAXX = -9999999999999999; //maximum value of input example
-//double init_weight() { return ((double)rand())/((double)RAND_MAX); }
-
 static const int numInputs = 1;
-static const int numHiddenNodes = 5;
+static const int numHiddenNodes = 8;
 static const int numOutputs = 1;
-
+static const int numTrainingSets = 100;
 const double lr = 0.05f;
 
 double hiddenLayer[numHiddenNodes];
 double outputLayer[numOutputs];
 
-double hiddenLayerBias[numHiddenNodes];
-double outputLayerBias[numOutputs];
+double hiddenLayerBias[numHiddenNodes];                     ///BIASES OF HIDDEN LAYER (c)
+double outputLayerBias[numOutputs];                         ///BIASES OF OUTPUT LAYER (b)
 
-double hiddenWeights[numInputs][numHiddenNodes];
-double outputWeights[numHiddenNodes][numOutputs];
+double hiddenWeights[numInputs][numHiddenNodes];            ///WEIGHTS OF HIDDEN LAYER (W)
+double outputWeights[numHiddenNodes][numOutputs];           ///WEIGHTS OF OUTPUT LAYER (V)
 
-static const int numTrainingSets = 30;
 double training_inputs[numTrainingSets][numInputs];
 double training_outputs[numTrainingSets][numOutputs];
 
@@ -90,14 +91,13 @@ void predict(double test_sample[])
 int main(int argc, const char * argv[])
 {
     ///TRAINING DATA GENERATION
-    cout<< "Initial Data: ";
     for (int i = 0; i < numTrainingSets; i++)
     {
 		double p = (2*PI*(double)i/numTrainingSets);
-		training_inputs[i][0] = (p);
-		training_outputs[i][0] = p*sin(p);
+		training_inputs[i][0] = p;
+		training_outputs[i][0] = 0.2+0.4*pow(p, 2)+0.3*p*sin(15*p)+0.05*cos(50*p);
 
-		/***************************Try Avoiding Edits In This part*******************************/
+        /***************************Try Avoiding Edits In This part*******************************/
         ///FINDING NORMALIZING FACTOR
         for(int m=0; m<numInputs; ++m)
             if(MAXX < training_inputs[i][m])
@@ -106,7 +106,9 @@ int main(int argc, const char * argv[])
             if(MAXX < training_outputs[i][m])
                 MAXX = training_outputs[i][m];
 
+        //cout<<"In: "<<training_inputs[i][0]<<"  out: "<<training_outputs[i][0]<<endl;
 	}
+
 	///NORMALIZING
 	for (int i = 0; i < numTrainingSets; i++)
 	{
@@ -115,10 +117,9 @@ int main(int argc, const char * argv[])
 
         for(int m=0; m<numOutputs; ++m)
             training_outputs[i][m] /= 1.0f*MAXX;
-        //cout<<" "<<"("<<training_inputs[i][0]<<","<<training_outputs[i][0] <<")";
-        //cout<<"In: "<<training_inputs[i][0]<<"  out: "<<training_outputs[i][0]<<endl;
+
+        cout<<"In: "<<training_inputs[i][0]<<"  out: "<<training_outputs[i][0]<<endl;
 	}
-	cout<<endl;
     ///WEIGHT & BIAS INITIALIZATION
     for (int i=0; i<numInputs; i++) {
         for (int j=0; j<numHiddenNodes; j++) {
@@ -153,8 +154,6 @@ int main(int argc, const char * argv[])
         for (int x=0; x<numTrainingSets; x++)
         {
             int i = trainingSetOrder[x];
-            //cout<<" "<<"("<<training_inputs[x][0]<<","<<training_outputs[x][0] <<")";
-            //int x=i;
             //std::cout<<"Training Set :"<<x<<"\n";
             /// Forward pass
             for (int j=0; j<numHiddenNodes; j++)
@@ -173,7 +172,7 @@ int main(int argc, const char * argv[])
                 {
                     activation+=hiddenLayer[k]*outputWeights[k][j];
                 }
-                outputLayer[j] = lin(activation);
+                outputLayer[j] = tanh(activation);
             }
 
             //std::cout << "Input:" << training_inputs[x][0] << " " << "    Output:" << outputLayer[0] << "    Expected Output: " << training_outputs[x][0] << "\n";
@@ -185,7 +184,7 @@ int main(int argc, const char * argv[])
             double deltaOutput[numOutputs];
             for (int j=0; j<numOutputs; j++) {
                 double errorOutput = (training_outputs[i][j]-outputLayer[j]);
-                deltaOutput[j] = errorOutput*dlin(outputLayer[j]);
+                deltaOutput[j] = errorOutput*dtanh(outputLayer[j]);
             }
 
             ///   For W
@@ -241,6 +240,7 @@ int main(int argc, const char * argv[])
     std::cout << "Final Hidden Biases\n[ ";
     for (int j=0; j<numHiddenNodes; j++) {
         std::cout << hiddenLayerBias[j] << " ";
+
     }
     std::cout << "]\n";
     std::cout << "Final Output Weights";
@@ -257,44 +257,50 @@ int main(int argc, const char * argv[])
     }
     std::cout << "]\n";
 
-    //Plot the results
+    ///Plot the results
 	vector<float> x;
 	vector<float> y1, y2;
     //double test_input[1000][numInputs];
     int numTestSets = numTrainingSets;
-	for (float i = 0; i < numTestSets; i=i+0.25)
-	{
+	for (float i = 0; i < numTestSets; i=i+0.25)///Note i
+    {
+        cout<<i<<endl;
         double p = (2*PI*(double)i/numTestSets);
-		x.push_back(p);
-		y1.push_back(p*sin(p));
-		double test_input[1];
-		test_input[0] = p/MAXX;
-        predict(test_input);
+        x.push_back(p);
+		///Actual Result
+		double res = 0.2+0.4*pow(p, 2)+0.3*p*sin(15*p)+0.05*cos(50*p);
+		y1.push_back(res);
+		///To Test
+		double temp[1];
+		temp[0] = p/MAXX;
+		predict(temp);
 		y2.push_back(outputLayer[0]*MAXX);
 	}
 
 	FILE * gp = popen("gnuplot", "w");
 	fprintf(gp, "set terminal wxt size 600,400 \n");
 	fprintf(gp, "set grid \n");
-	fprintf(gp, "set title '%s' \n", "f(x) = x sin (x)");
+	fprintf(gp, "set title '%s' \n", "f(x) = Wiggly Function");
 	fprintf(gp, "set style line 1 lt 3 pt 7 ps 0.1 lc rgb 'green' lw 1 \n");
 	fprintf(gp, "set style line 2 lt 3 pt 7 ps 0.1 lc rgb 'red' lw 1 \n");
 	fprintf(gp, "plot '-' w p ls 1, '-' w p ls 2 \n");
 
-	///Exact f(x) = sin(x) -> Green Graph
+
+	///Exact f(x) = addition -> Green Graph
 	for (int k = 0; k < x.size(); k++) {
 		fprintf(gp, "%f %f \n", x[k], y1[k]);
 	}
 	fprintf(gp, "e\n");
 
-	///Neural Network Approximate f(x) = xsin(x) -> Red Graph
+	///Neural Network Approximate -> Red Graph
 	for (int k = 0; k < x.size(); k++) {
 		fprintf(gp, "%f %f \n", x[k], y2[k]);
 	}
 	fprintf(gp, "e\n");
 
 	fflush(gp);
-    ///FILE POINTER FOR SECOND PLOT (PERFORMANCE GRAPH)
+
+	///FILE POINTER FOR SECOND PLOT (PERFORMANCE GRAPH)
     FILE * gp1 = popen("gnuplot", "w");
 	fprintf(gp1, "set terminal wxt size 600,400 \n");
 	fprintf(gp1, "set grid \n");
@@ -311,7 +317,7 @@ int main(int argc, const char * argv[])
 	fflush(gp1);
 
 	system("pause");
-	//_pclose(gp);
+	//pclose(gp);
 
     return 0;
 }
