@@ -13,7 +13,7 @@
 
 #define N
 #define epsilon 0.05
-#define epoch 50000
+#define epoch 10000
 
 using namespace std;
 extern "C" FILE *popen(const char *command, const char *mode);
@@ -22,18 +22,22 @@ extern "C" FILE *popen(const char *command, const char *mode);
 double sigmoid(double x) { return 1.0f / (1.0f + exp(-x)); }
 double dsigmoid(double x) { return x * (1.0f - x); }
 
+///LINEAR ACTIVATION DEFINITIONS
+double lin(double x) { return x;}
+double dlin(double x) { return 1.0f;}
+
 ///TANH ACTIVATION DEFINITIONS
 double tanh(double x) { return (exp(x)-exp(-x))/(exp(x)+exp(-x)) ;}
 double dtanh(double x) {return 1.0f - x*x ;}
 
 ///WEIGHT INITIALIZER
-double init_weight() { return (2*rand()/RAND_MAX -1); }
+double init_weight() { return (2.*rand()/RAND_MAX -1); }
 
 double MAXX = -9999999999999999; //maximum value of input example
 static const int numInputs = 1;
-static const int numHiddenNodes = 10;
+static const int numHiddenNodes = 8;
 static const int numOutputs = 1;
-static const int numTrainingSets = 50;
+static const int numTrainingSets = 100;
 const double lr = 0.05f;
 
 double hiddenLayer[numHiddenNodes];
@@ -82,7 +86,7 @@ void predict(double test_sample[])
         {
             activation+=hiddenLayer[k]*outputWeights[k][j];
         }
-        outputLayer[j] = tanh(activation);
+        outputLayer[j] = lin(activation);
     }
     //std::cout<<outputLayer[0]<<"\n";
     //return outputLayer[0];
@@ -140,7 +144,7 @@ int main(int argc, const char * argv[])
 
     ///FOR INDEX SHUFFLING
     int trainingSetOrder[numTrainingSets];
-    for(int j=0; j<numInputs; ++j)
+    for(int j=0; j<numTrainingSets; ++j)
         trainingSetOrder[j] = j;
 
 
@@ -152,10 +156,9 @@ int main(int argc, const char * argv[])
         double MSE = 0;
         shuffle(trainingSetOrder,numTrainingSets);
         std::cout<<"\nepoch :"<<n;
-        for (int i=0; i<numTrainingSets; i++)
+        for (int x=0; x<numTrainingSets; x++)
         {
-            //int i = trainingSetOrder[x];
-            int x=i;
+            int i = trainingSetOrder[x];
             //std::cout<<"Training Set :"<<x<<"\n";
             /// Forward pass
             for (int j=0; j<numHiddenNodes; j++)
@@ -163,7 +166,7 @@ int main(int argc, const char * argv[])
                 double activation=hiddenLayerBias[j];
                 //std::cout<<"Training Set :"<<x<<"\n";
                  for (int k=0; k<numInputs; k++) {
-                    activation+=training_inputs[x][k]*hiddenWeights[k][j];
+                    activation+=training_inputs[i][k]*hiddenWeights[k][j];
                 }
                 hiddenLayer[j] = tanh(activation);
             }
@@ -179,7 +182,7 @@ int main(int argc, const char * argv[])
 
             //std::cout << "Input:" << training_inputs[x][0] << " " << "    Output:" << outputLayer[0] << "    Expected Output: " << training_outputs[x][0] << "\n";
             for(int k=0; k<numOutputs; ++k)
-                MSE += (1.0f/numOutputs)*pow( training_outputs[x][k] - outputLayer[k], 2);
+                MSE += (1.0f/numOutputs)*pow( training_outputs[i][k] - outputLayer[k], 2);
 
            /// Backprop
            ///   For V
@@ -264,7 +267,7 @@ int main(int argc, const char * argv[])
 	vector<float> y1, y2;
     //double test_input[1000][numInputs];
     int numTestSets = numTrainingSets;
-	for (int i = 0; i < numTestSets; i++)///Note i
+	for (float i = 0; i < numTestSets; i=i+0.25)///Note i
     {
         cout<<i<<endl;
         double p = (2*PI*(double)i/numTestSets);
