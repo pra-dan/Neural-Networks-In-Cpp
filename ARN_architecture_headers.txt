@@ -1,0 +1,51 @@
+numInputs
+numHiddenLayers
+numSynapses
+
+configure_NN_HiddenLayers(2);
+configure_NN_HiddenNodes(5);
+
+configure_NN_OutputNeurons
+{
+	float OutputWeight[n];
+	float OutputBias[n];
+}
+
+
+struct HiddenLayer
+{
+    int nodes;     ///Number of nodes in this HiddenLayer
+    float *Wx;
+    float *b;
+
+    float *delW;
+    float *b;
+};HLayer
+
+struct Synapse
+{
+    int prev_layer_nodes;     ///Number of Nodes in the left layer
+    int next_layer_nodes;     ///Number of Nodes in the right layer
+    float** w;                ///Weights of the connections
+};syn
+
+configure_NN_OutputNeurons(int n) 
+{
+numOutputs = n
+float outputLayer[n];
+ float outputBias[n];
+}
+
+
+double deltaHidden[numHiddenNodes];
+            for (int j=0; j<numHiddenNodes; j++) {
+                double errorHidden = 0.0f;
+                for(int k=0; k<numOutputs; k++) {
+                    errorHidden+=deltaOutput[k]*outputWeights[j][k];
+                }
+                deltaHidden[j] = errorHidden*dtanh(hiddenLayer[j]);
+            }
+
+#ALL SYNAPSES TO BE INCLUDED
+#NEXT of 0 - PREV of 1  PAIRS IN SYNAPSES (ADJACENT ONES)
+#FORMING THE SYNAPSES IN THE FORM: SYNAPSE-H_LAYER AND ENDING BEFORE OUTPUT LAYER
