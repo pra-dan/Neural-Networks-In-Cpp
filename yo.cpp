@@ -41,8 +41,8 @@ double init_weight() { return (2*rand()/RAND_MAX -1); }
 static const int numInputs = 1;
 static int numHiddenLayers;
 static int numSynapses;
-//static const int numHiddenNodes;
-static const int numOutputs;
+static int numHiddenNodes;
+static int numOutputs;
 
 ///CONFIGURE THE NUMBER THE NUMBER OF HIDDEN LAYERS
 double configure_NN_HiddenLayers(int n)
@@ -235,10 +235,10 @@ int main(int argc, const char * argv[])
         double MSE = 0;
         shuffle(trainingSetOrder,numTrainingSets);
         std::cout<<"epoch :"<<n<<"\n";
-        for (int i=0; i<numTrainingSets; i++)
+        for (int x=0; x<numTrainingSets; x++)
         {
             //int i = trainingSetOrder[x];
-            int x=i;
+            //int x=i;
             //std::cout<<"Training Set :"<<x<<"\n";
             /// Forward pass
             /*
@@ -316,32 +316,44 @@ int main(int argc, const char * argv[])
             double deltaOutput[numOutputs];
             for (int j=0; j<numOutputs; j++)
             {
-                double errorOutput = (training_outputs[i][j]-outputLayer[j]);
+                double errorOutput = (training_outputs[x][j]-outputLayer[j]);
                 deltaOutput[j] = errorOutput*dlin(outputLayer[j]);
             }
             /**Consider (nth) Layer-(n-1 th) Synapse pairs
             *For W(n), W(n-1), W(n-2)...
-            **PHASE A
+            **PHASE B
             ***Only for Output Layer-Last Synapse pair*/
             int i=numSynapses-1; //Beginning with the last synapse
             {
-                for(int j=0; j<HLayer[i].nodes; j++)
+                for(int j=0; j<HLayer[i-1].nodes; j++)
                 {
                     float errorHidden = 0.0f;
                     for(int k=0; k<numOutputs; k++)
                     {
-                        errorHidden += deltaOutput[k] * syn[i].w[j][k];
+                        errorHidden += deltaOutput[k] * syn[i].w[j][k];     //Notice: No index for error here
                     }
+                    HLayer[i-1].delW[j] = errorHidden * dtanh(HLayer[i-1].Wx[j]);
                 }
             }
-            for(; i>0; --i) //Iterating in reverse fashion
-
+            for(; i>0; --i) //Iterating in reverse fashion only till 2st synapse or index = 1(not for i = 0)
+            {
+                for(int j=0; j<HLayer[i-1].nodes; ++j)
+                {
+                    float errorHidden = 0.0f;
+                    for(int k=0; k<syn[i].next_layer_nodes; ++k)
+                    {
+                        errorHidden += HLayer[i].delW[j] * syn[i].w[j][k];
+                    }
+                    HLayer[i-1].delW[j] = errorHidden * dtanh(HLayer[i-1].Wx[j]);
+                }
+            }
 
             ///Updation
             ///   For V and b
+            i = numHiddenLayers-1;
             for (int j=0; j<numOutputs; j++) {
                 //b
-                outputLayerBias[j] += deltaOutput[j]*lr;
+                outputBias[j] += deltaOutput[j]*lr;
                 for (int k=0; k<numHiddenNodes; k++)
                 {
                     outputWeights[k][j]+= hiddenLayer[k]*deltaOutput[j]*lr;
@@ -354,7 +366,7 @@ int main(int argc, const char * argv[])
                 hiddenLayerBias[j] += deltaHidden[j]*lr;
                 //W
                 for(int k=0; k<numInputs; k++) {
-                  hiddenWeights[k][j]+=training_inputs[i][k]*deltaHidden[j]*lr;
+                  hiddenWeights[k][j]+=training_inputs[x][k]*deltaHidden[j]*lr;
                 }
             }
         }
