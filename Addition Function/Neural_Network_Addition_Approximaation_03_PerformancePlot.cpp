@@ -1,4 +1,7 @@
 //Had a lot of trouble with shuffle
+/*
+Edit 21-01-2020: Made plotting dots bigger, added printing of expected vs predicted part
+*/
 #include <iostream>
 #include<vector>
 #include <math.h>
@@ -128,7 +131,7 @@ int main(int argc, const char * argv[])
     {
         double MSE = 0;
         shuffle(trainingSetOrder,numTrainingSets);
-        std::cout<<"epoch :"<<n;
+        std::cout<<"\nepoch :"<<n;
         for (int i=0; i<numTrainingSets; i++)
         {
             //int i = trainingSetOrder[x];
@@ -236,11 +239,12 @@ int main(int argc, const char * argv[])
     std::cout << "]\n";
 
     ///Plot the results
-	vector<float> x;
-	vector<float> y1, y2;
+	vector<double> x;
+	vector<double> y1, y2;
     double test_input[1000][numInputs];
 
-	for (int i = 0; i < 500; i++) {
+	for (int i = 0; i < 5; i++)
+    {
 		x.push_back(i);
 
 		test_input[i][0] = (rand()%MAXX);
@@ -249,15 +253,19 @@ int main(int argc, const char * argv[])
 
 		test_input[i][0] /= MAXX*numInputs;
 		test_input[i][1] /= MAXX*numInputs;
-		y2.push_back(MAXX*numInputs*predict(test_input[i]));
+
+		double pred = MAXX*numInputs*predict(test_input[i]);
+		y2.push_back(pred);
+
+		cout<<"\nExpected: "<< MAXX*numInputs*(test_input[i][0] + test_input[i][1]) <<"  Got: "<< pred;
 	}
 
 	FILE * gp = popen("gnuplot", "w");
 	fprintf(gp, "set terminal wxt size 600,400 \n");
 	fprintf(gp, "set grid \n");
 	fprintf(gp, "set title '%s' \n", "f(x) = Addition of two variables");
-	fprintf(gp, "set style line 1 lt 3 pt 7 ps 0.1 lc rgb 'green' lw 1 \n");
-	fprintf(gp, "set style line 2 lt 3 pt 7 ps 0.1 lc rgb 'red' lw 1 \n");
+	fprintf(gp, "set style line 1 lt 3 pt 7 ps 0.5 lc rgb 'green' lw 1 \n");
+	fprintf(gp, "set style line 2 lt 3 pt 7 ps 0.5 lc rgb 'red' lw 1 \n");
 	fprintf(gp, "plot '-' w p ls 1, '-' w p ls 2 \n");
 
 
