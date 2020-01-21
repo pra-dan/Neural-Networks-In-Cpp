@@ -1,4 +1,4 @@
-//Had a lot of trouble with shuffle
+//Shuffle doesn't work in this
 /*
 Edit 21-01-2020: Made plotting dots bigger, added printing of expected vs predicted part
 */
