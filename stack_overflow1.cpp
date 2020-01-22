@@ -153,7 +153,7 @@ int main(int argc, const char * argv[])
                  for (int k=0; k<numInputs; k++) {
                     activation+=training_inputs[x][k]*hiddenWeights[k][j];
                 }
-                hiddenLayer[j] = elu(activation);
+                hiddenLayer[j] = lin(activation);
             }
 
             for (int j=0; j<numOutputs; j++) {
@@ -162,7 +162,7 @@ int main(int argc, const char * argv[])
                 {
                     activation+=hiddenLayer[k]*outputWeights[k][j];
                 }
-                outputLayer[j] = elu(activation);
+                outputLayer[j] = lin(activation);
             }
 
             //std::cout << "Input:" << training_inputs[x][0] << " " << "    Output:" << outputLayer[0] << "    Expected Output: " << training_outputs[x][0] << "\n";
@@ -173,7 +173,7 @@ int main(int argc, const char * argv[])
             double deltaOutput[numOutputs];
             for (int j=0; j<numOutputs; j++) {
                 double errorOutput = (training_outputs[i][j]-outputLayer[j]);
-                deltaOutput[j] = errorOutput*delu(outputLayer[j]);
+                deltaOutput[j] = errorOutput*dlin(outputLayer[j]);
             }
 
             ///   For W
@@ -183,7 +183,7 @@ int main(int argc, const char * argv[])
                 for(int k=0; k<numOutputs; k++) {
                     errorHidden+=deltaOutput[k]*outputWeights[j][k];
                 }
-                deltaHidden[j] = errorHidden*delu(hiddenLayer[j]);
+                deltaHidden[j] = errorHidden*dlin(hiddenLayer[j]);
             }
 
             ///Updation
