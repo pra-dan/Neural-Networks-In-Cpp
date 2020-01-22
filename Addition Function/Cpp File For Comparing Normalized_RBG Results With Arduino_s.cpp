@@ -1,4 +1,7 @@
-//Had a lot of trouble with shuffle
+/*
+Edit 22-01-2020: Got Splendid results with elu+lin activation with normalization
+
+*/
 #include <iostream>
 #include<vector>
 #include <math.h>
@@ -20,12 +23,26 @@ double dsigmoid(double x) { return x * (1.0f - x); }
 double tanh(double x) { return (exp(x)-exp(-x))/(exp(x)+exp(-x)) ;}
 double dtanh(double x) {return 1.0f - x*x ;}
 
+///ELU ACTIVATION DEFINITIONS
+double elu(double x) { if(x>0)
+                            return x;
+                       else return epsilon*(exp(x)-1.0);
+                     }
+double delu(double x) { if(x>0)
+                            return 1.0f;
+                       else return epsilon*exp(x);
+                     }
+
+///LINEAR ACTIVATION DEFINITIONS
+double lin(double x) { return x;}
+double dlin(double x) { return 1.0f;}
+
 ///WEIGHT INITIALIZER
 double init_weight() { return (2*rand()/RAND_MAX -1); }
 
 double MAXX = -9999999999999999; //maximum value of input example
 static const int numInputs = 3;
-static const int numHiddenNodes = 6;
+static const int numHiddenNodes = 10;
 static const int numOutputs = 1;
 static const int numTrainingSets = 8;    ///Train Set = 8
 static const int numTestSets = 16;    ///Test Set = 16
@@ -123,7 +140,7 @@ double predict(double test_sample[])
         {
             activation+=test_sample[k]*hiddenWeights[k][j];
         }
-        hiddenLayer[j] = tanh(activation);
+        hiddenLayer[j] = elu(activation);
     }
 
     for (int j=0; j<numOutputs; j++)
@@ -133,7 +150,7 @@ double predict(double test_sample[])
         {
             activation+=hiddenLayer[k]*outputWeights[k][j];
         }
-        outputLayer[j] = tanh(activation);
+        outputLayer[j] = lin(activation);
     }
     //std::cout<<outputLayer[0]<<"\n";
     return outputLayer[0];
@@ -158,9 +175,11 @@ int main(int argc, const char * argv[])
         for(int m=0; m<numOutputs; ++m)
             if(MAXX < training_outputs[i][m])
                 MAXX = training_outputs[i][m];
+        cout<< "\nFound Normalizing Factor = "<<MAXX;
     }
 
 	///NORMALIZING
+
 	for (int i = 0; i < numTrainingSets; i++)
 	{
         for(int m=0; m<numInputs; ++m)
@@ -214,7 +233,7 @@ int main(int argc, const char * argv[])
                  for (int k=0; k<numInputs; k++) {
                     activation+=training_inputs[i][k]*hiddenWeights[k][j];
                 }
-                hiddenLayer[j] = tanh(activation);
+                hiddenLayer[j] = elu(activation);
             }
 
             for (int j=0; j<numOutputs; j++) {
@@ -223,7 +242,7 @@ int main(int argc, const char * argv[])
                 {
                     activation+=hiddenLayer[k]*outputWeights[k][j];
                 }
-                outputLayer[j] = tanh(activation);
+                outputLayer[j] = lin(activation);
             }
 
             //std::cout << "Input:" << training_inputs[x][0] << " " << "    Output:" << outputLayer[0] << "    Expected Output: " << training_outputs[x][0] << "\n";
@@ -235,7 +254,7 @@ int main(int argc, const char * argv[])
             double deltaOutput[numOutputs];
             for (int j=0; j<numOutputs; j++) {
                 double errorOutput = (training_outputs[i][j]-outputLayer[j]);
-                deltaOutput[j] = errorOutput*dtanh(outputLayer[j]);
+                deltaOutput[j] = errorOutput*dlin(outputLayer[j]);
             }
 
             ///   For W
@@ -245,7 +264,7 @@ int main(int argc, const char * argv[])
                 for(int k=0; k<numOutputs; k++) {
                     errorHidden+=deltaOutput[k]*outputWeights[j][k];
                 }
-                deltaHidden[j] = errorHidden*dtanh(hiddenLayer[j]);
+                deltaHidden[j] = errorHidden*delu(hiddenLayer[j]);
             }
 
             ///Updation
@@ -310,7 +329,6 @@ int main(int argc, const char * argv[])
     ///Plot the results
 	vector<double> x;
 	vector<double> y1, y2;
-    //double test_input[1000][numInputs];
 
 	for (int i = 0; i < numTestSets; i++)
     {
@@ -318,22 +336,22 @@ int main(int argc, const char * argv[])
 
 		//test_input[i][0] = (rand()%MAXX);
 		//test_input[i][1] = (rand()%MAXX);
-		y1.push_back(test_outputs[i][0]);
+		y1.push_back(test_outputs[i][0]);           //Expected
 
 		test_inputs[i][0] /= MAXX*numInputs;
 		test_inputs[i][1] /= MAXX*numInputs;
 		test_inputs[i][2] /= MAXX*numInputs;
 
-		y2.push_back(MAXX*numInputs*predict(test_inputs[i]));
-		cout<< "Excpected: "<<test_outputs[i][0] << "Got: "<<MAXX*numInputs*predict(test_inputs[i])<<endl;
+		y2.push_back(MAXX*numInputs*predict(test_inputs[i]));       //Predicted
+		cout<< "\nExpected: "<<test_outputs[i][0] << "\tGot: "<<MAXX*numInputs*predict(test_inputs[i]);
 	}
 
 	FILE * gp = popen("gnuplot", "w");
 	fprintf(gp, "set terminal wxt size 600,400 \n");
 	fprintf(gp, "set grid \n");
-	fprintf(gp, "set title '%s' \n", "RGB to R'G'B'");
-	fprintf(gp, "set style line 1 lt 3 pt 7 ps 0.1 lc rgb 'green' lw 1 \n");
-	fprintf(gp, "set style line 2 lt 3 pt 7 ps 0.1 lc rgb 'red' lw 1 \n");
+	fprintf(gp, "set title '%s' \n", "RGB to R^ G^ B^");
+	fprintf(gp, "set style line 1 lt 3 pt 7 ps 0.5 lc rgb 'green' lw 1 \n");
+	fprintf(gp, "set style line 2 lt 3 pt 7 ps 0.5 lc rgb 'red' lw 1 \n");
 	fprintf(gp, "plot '-' w p ls 1, '-' w p ls 2 \n");
 
 
