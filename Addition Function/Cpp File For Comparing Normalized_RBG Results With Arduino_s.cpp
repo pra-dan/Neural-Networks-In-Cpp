@@ -1,5 +1,7 @@
 /*
-Edit 22-01-2020: Got Splendid results with elu+lin activation with normalization
+Edit 22-01-2020: Got Splendid results with elu+lin activation with normalization, 
+		 Added CHROMATICITY CALCULATION part in the pre-processing part
+		 Added 'alpha' (initialliy, epsilon stood in its place)
 
 */
 #include <iostream>
@@ -10,6 +12,7 @@ Edit 22-01-2020: Got Splendid results with elu+lin activation with normalization
 
 #define N
 #define epsilon 0.05
+#define alpha 1         //AS PER TENSORFLOW DOCS
 #define epoch 1000
 
 using namespace std;
@@ -26,11 +29,11 @@ double dtanh(double x) {return 1.0f - x*x ;}
 ///ELU ACTIVATION DEFINITIONS
 double elu(double x) { if(x>0)
                             return x;
-                       else return epsilon*(exp(x)-1.0);
+                       else return alpha*(exp(x)-1.0);
                      }
 double delu(double x) { if(x>0)
                             return 1.0f;
-                       else return epsilon*exp(x);
+                       else return alpha*exp(x);
                      }
 
 ///LINEAR ACTIVATION DEFINITIONS
@@ -163,10 +166,13 @@ int main(int argc, const char * argv[])
 
     for (int i = 0; i < numTrainingSets; i++)
     {
-		/*training_inputs[i][0] = i%MAXX;
-		double sum = i%MAXX;
-		training_inputs[i][1] = (i*2)%MAXX;
-		sum+=(i*2)%MAXX;*/
+		///APPLYING CHROMATICITY CALCULATION
+		training_inputs[i][0] = training_inputs[i][0]*(-0.14282) + training_inputs[i][1]*(1.54924) + training_inputs[i][2]*(-0.95641);
+		training_inputs[i][1] = training_inputs[i][0]*(-0.32466) + training_inputs[i][1]*(1.57837) + training_inputs[i][2]*(-0.73191);
+		training_inputs[i][2] = training_inputs[i][0]*(-0.68202) + training_inputs[i][1]*(0.77073) + training_inputs[i][2]*(0.56332);
+
+		training_outputs[i][0] = training_inputs[i][0]+training_inputs[i][1]+training_inputs[i][2];
+
 		/***************************Try Avoiding Edits In This part*******************************/
         ///FINDING NORMALIZING FACTOR
 		for(int m=0; m<numInputs; ++m)
@@ -175,20 +181,19 @@ int main(int argc, const char * argv[])
         for(int m=0; m<numOutputs; ++m)
             if(MAXX < training_outputs[i][m])
                 MAXX = training_outputs[i][m];
-        cout<< "\nFound Normalizing Factor = "<<MAXX;
     }
+    cout<< "\nFound Normalizing Factor = "<<MAXX;
 
 	///NORMALIZING
-
 	for (int i = 0; i < numTrainingSets; i++)
 	{
         for(int m=0; m<numInputs; ++m)
-            training_inputs[i][m] /= 1.0f*MAXX;
+            training_inputs[i][m] /= 1.0f*MAXX*numInputs;
 
         for(int m=0; m<numOutputs; ++m)
-            training_outputs[i][m] /= 1.0f*MAXX;
+            training_outputs[i][m] /= 1.0f*MAXX*numInputs;
 
-        //cout<<"In: "<<training_inputs[i][0]<<"  out: "<<training_outputs[i][0]<<endl;
+        cout<<"In: "<<training_inputs[i][0]<< ", " <<training_inputs[i][1]<<", "<<training_inputs[i][2]<<"       out: "<<training_outputs[i][0]<<endl;
 	}
     ///WEIGHT & BIAS INITIALIZATION
     for (int i=0; i<numInputs; i++) {
@@ -333,6 +338,13 @@ int main(int argc, const char * argv[])
 	for (int i = 0; i < numTestSets; i++)
     {
 		x.push_back(i);
+
+        ///APPLYING CHROMATICITY CALCULATION
+		test_inputs[i][0] = test_inputs[i][0]*(-0.14282) + test_inputs[i][1]*(1.54924) + test_inputs[i][2]*(-0.95641);
+		test_inputs[i][1] = test_inputs[i][0]*(-0.32466) + test_inputs[i][1]*(1.57837) + test_inputs[i][2]*(-0.73191);
+		test_inputs[i][2] = test_inputs[i][0]*(-0.68202) + test_inputs[i][1]*(0.77073) + test_inputs[i][2]*(0.56332);
+
+		test_outputs[i][0] = test_inputs[i][0]+test_inputs[i][1]+test_inputs[i][2];
 
 		//test_input[i][0] = (rand()%MAXX);
 		//test_input[i][1] = (rand()%MAXX);
