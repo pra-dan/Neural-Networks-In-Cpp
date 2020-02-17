@@ -1,5 +1,12 @@
 //Had a lot of trouble with shuffle
 //Added linear activation beside tanh
+/*
+*Plan:
+- Generalize by converting into 2D or 3D arrays
+- Dynamically allocate memory
+- Use Header File
+*
+*/
 #include <iostream>
 #include<vector>
 #include <list>
